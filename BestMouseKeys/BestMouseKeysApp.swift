@@ -14,12 +14,33 @@ struct BestMouseKeysApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var keyboardMonitor: KeyboardMonitor?
+    private var permissionPollTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBarItem()
+        AccessibilityManager.shared.requestAccessIfNeeded()
 
-        if AccessibilityManager.shared.requestAccessIfNeeded() {
+        // Defer to the next runloop tick: creating a CGEvent tap inside
+        // applicationDidFinishLaunching produces a port that silently drops
+        // events until re-created.
+        DispatchQueue.main.async { [weak self] in
+            self?.startMonitoringWhenPermitted()
+        }
+    }
+
+    private func startMonitoringWhenPermitted() {
+        if AccessibilityManager.shared.isAccessibilityEnabled {
             startMonitoring()
+            return
+        }
+        permissionPollTimer?.invalidate()
+        permissionPollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            if AccessibilityManager.shared.isAccessibilityEnabled {
+                timer.invalidate()
+                self.permissionPollTimer = nil
+                self.startMonitoring()
+            }
         }
     }
 

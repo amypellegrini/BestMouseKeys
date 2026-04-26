@@ -47,6 +47,7 @@ final class KeyboardMonitor {
         }
         eventTap = nil
         runLoopSource = nil
+        OverlayController.shared.dismiss()
     }
 
     // MARK: - Event tap callback
@@ -58,6 +59,31 @@ final class KeyboardMonitor {
 
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
 
+        // Overlay mode swallows numpad digits and Escape/numpad-0 (cancel).
+        if OverlayController.shared.isActive {
+            if let digit = numpadDigit(for: keyCode) {
+                DispatchQueue.main.async {
+                    OverlayController.shared.selectCell(numpadDigit: digit)
+                }
+                return nil
+            }
+            if keyCode == 53 || keyCode == 82 { // Escape or numpad 0
+                DispatchQueue.main.async {
+                    OverlayController.shared.dismiss()
+                }
+                return nil
+            }
+            return Unmanaged.passRetained(event)
+        }
+
+        // Numpad 0 enters overlay mode.
+        if keyCode == 82 {
+            DispatchQueue.main.async {
+                OverlayController.shared.show()
+            }
+            return nil
+        }
+
         // Only intercept numpad keys.
         guard let action = numpadAction(for: keyCode) else {
             return Unmanaged.passRetained(event)
@@ -67,6 +93,21 @@ final class KeyboardMonitor {
 
         // Returning nil swallows the event so it doesn't propagate further.
         return nil
+    }
+
+    private static func numpadDigit(for keyCode: Int64) -> Int? {
+        switch keyCode {
+        case 83: return 1
+        case 84: return 2
+        case 85: return 3
+        case 86: return 4
+        case 87: return 5
+        case 88: return 6
+        case 89: return 7
+        case 91: return 8
+        case 92: return 9
+        default: return nil
+        }
     }
 
     private static func numpadAction(for keyCode: Int64) -> (() -> Void)? {
