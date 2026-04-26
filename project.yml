@@ -1,0 +1,24 @@
+name: BestMouseKeys
+options:
+  bundleIdPrefix: com.amypellegrini
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "16.0"
+  minimumXcodeGenVersion: "2.30"
+
+targets:
+  BestMouseKeys:
+    type: application
+    platform: macOS
+    sources:
+      - BestMouseKeys
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.amypellegrini.BestMouseKeys
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: 1
+        INFOPLIST_FILE: BestMouseKeys/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BestMouseKeys/BestMouseKeys.entitlements
+        SWIFT_VERSION: "5.9"
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        ENABLE_HARDENED_RUNTIME: YES
