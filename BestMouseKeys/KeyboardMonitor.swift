@@ -8,8 +8,11 @@ import CoreGraphics
 ///  7 (↖)  8 (↑)  9 (↗)
 ///  4 (←)  5 (●)  6 (→)
 ///  1 (↙)  2 (↓)  3 (↘)
-///         0 (click & hold — future)
 /// ```
+/// Numpad Enter toggles the grid overlay; in overlay mode the digits jump
+/// the cursor to the chosen cell (recursively), and Enter or Escape cancels.
+/// Numpad 0 toggles a synthetic drag (press once to grab, again to drop) —
+/// works in both normal and overlay modes.
 final class KeyboardMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -48,6 +51,7 @@ final class KeyboardMonitor {
         eventTap = nil
         runLoopSource = nil
         OverlayController.shared.dismiss()
+        MouseController.releaseDragIfNeeded()
     }
 
     // MARK: - Event tap callback
@@ -59,7 +63,15 @@ final class KeyboardMonitor {
 
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
 
-        // Overlay mode swallows numpad digits and Escape/numpad-0 (cancel).
+        // Numpad 0 — toggles drag (works in both normal and overlay modes).
+        if keyCode == 82 {
+            DispatchQueue.main.async {
+                MouseController.toggleDrag()
+            }
+            return nil
+        }
+
+        // Overlay mode swallows numpad digits and Escape/numpad Enter (cancel).
         if OverlayController.shared.isActive {
             if let digit = numpadDigit(for: keyCode) {
                 DispatchQueue.main.async {
@@ -67,7 +79,7 @@ final class KeyboardMonitor {
                 }
                 return nil
             }
-            if keyCode == 53 || keyCode == 82 { // Escape or numpad 0
+            if keyCode == 53 || keyCode == 76 { // Escape or numpad Enter
                 DispatchQueue.main.async {
                     OverlayController.shared.dismiss()
                 }
@@ -76,8 +88,8 @@ final class KeyboardMonitor {
             return Unmanaged.passRetained(event)
         }
 
-        // Numpad 0 enters overlay mode.
-        if keyCode == 82 {
+        // Numpad Enter enters overlay mode.
+        if keyCode == 76 {
             DispatchQueue.main.async {
                 OverlayController.shared.show()
             }

@@ -20,12 +20,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupMenuBarItem()
         AccessibilityManager.shared.requestAccessIfNeeded()
 
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(dragStateChanged),
+            name: .mouseDragStateChanged,
+            object: nil
+        )
+
         // Defer to the next runloop tick: creating a CGEvent tap inside
         // applicationDidFinishLaunching produces a port that silently drops
         // events until re-created.
         DispatchQueue.main.async { [weak self] in
             self?.startMonitoringWhenPermitted()
         }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        MouseController.releaseDragIfNeeded()
+    }
+
+    @objc private func dragStateChanged() {
+        updateMenuBarIcon()
+    }
+
+    private func updateMenuBarIcon() {
+        guard let button = statusItem.button else { return }
+        let symbolName = MouseController.isDragging ? "computermouse.fill" : "computermouse"
+        button.image = NSImage(
+            systemSymbolName: symbolName,
+            accessibilityDescription: "Best Mouse Keys"
+        )
+        button.contentTintColor = MouseController.isDragging ? .systemRed : nil
     }
 
     private func startMonitoringWhenPermitted() {

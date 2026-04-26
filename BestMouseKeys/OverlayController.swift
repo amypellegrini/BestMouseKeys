@@ -11,8 +11,8 @@ final class OverlayController {
     private var window: NSWindow?
     private var state: GridState?
 
-    /// Number of subdivisions allowed (level 1 → 2 → 3, then dismiss).
-    private static let maxLevel = 3
+    /// Number of subdivisions allowed (level 1 → 2 → 3 → 4, then dismiss).
+    private static let maxLevel = 4
 
     var isActive: Bool { window != nil }
 
@@ -47,7 +47,8 @@ final class OverlayController {
     func selectCell(numpadDigit digit: Int) {
         guard let s = state else { return }
         let cell = s.cellRect(forKeypadDigit: digit)
-        warpCursor(toScreenPoint: CGPoint(x: cell.midX, y: cell.midY))
+        let appKitPoint = CGPoint(x: cell.midX, y: cell.midY)
+        MouseController.warp(to: cgPoint(fromAppKitScreenPoint: appKitPoint))
 
         if s.level >= Self.maxLevel {
             dismiss()
@@ -76,19 +77,13 @@ final class OverlayController {
             ?? NSScreen.screens[0]
     }
 
-    /// Warps the cursor to a point in AppKit screen coordinates (bottom-left origin).
-    /// CGEvent uses top-left origin of the primary display, so we flip Y.
-    private func warpCursor(toScreenPoint p: CGPoint) {
+    /// Converts a point from AppKit screen coordinates (bottom-left origin) to
+    /// CGEvent coordinates (top-left of the primary display).
+    private func cgPoint(fromAppKitScreenPoint p: CGPoint) -> CGPoint {
         let primary = NSScreen.screens.first(where: { $0.frame.origin == .zero })
             ?? NSScreen.main
             ?? NSScreen.screens[0]
-        let cg = CGPoint(x: p.x, y: primary.frame.maxY - p.y)
-        CGEvent(
-            mouseEventSource: nil,
-            mouseType: .mouseMoved,
-            mouseCursorPosition: cg,
-            mouseButton: .left
-        )?.post(tap: .cghidEventTap)
+        return CGPoint(x: p.x, y: primary.frame.maxY - p.y)
     }
 }
 
