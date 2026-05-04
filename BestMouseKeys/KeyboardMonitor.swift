@@ -133,8 +133,8 @@ final class KeyboardMonitor {
             return { MouseController.move(dx: s, dy: -s) }
         case 86: // Numpad 4 — left
             return { MouseController.move(dx: -s, dy: 0) }
-        case 87: // Numpad 5 — click
-            return { MouseController.click() }
+        case 87: // Numpad 5 — click (double-click on rapid second tap)
+            return { MouseController.tap() }
         case 88: // Numpad 6 — right
             return { MouseController.move(dx: s, dy: 0) }
         case 83: // Numpad 1 — down-left

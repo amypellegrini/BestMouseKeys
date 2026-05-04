@@ -23,11 +23,34 @@ enum MouseController {
     /// when no key is being pressed.
     private static var dragHeartbeat: DispatchSourceTimer?
 
-    /// Performs a left-click at the current cursor position.
-    static func click() {
+    private static let doubleClickThreshold: TimeInterval = 0.3
+    private static let doubleClickDistance: CGFloat = 5
+    private static var lastClickTime: TimeInterval = 0
+    private static var lastClickPosition: CGPoint = .zero
+
+    /// Performs a left-click at the current cursor position. Two calls within
+    /// `doubleClickThreshold` and `doubleClickDistance` form a double-click
+    /// (the second click is posted with `clickState = 2`).
+    static func tap() {
+        let now = ProcessInfo.processInfo.systemUptime
         let position = currentPosition()
-        postMouse(.leftMouseDown, at: position, clickState: 1)
-        postMouse(.leftMouseUp, at: position, clickState: 1)
+
+        let dx = position.x - lastClickPosition.x
+        let dy = position.y - lastClickPosition.y
+        let withinTime = now - lastClickTime < doubleClickThreshold
+        let withinDistance = (dx * dx + dy * dy) < doubleClickDistance * doubleClickDistance
+        let isDouble = withinTime && withinDistance
+
+        let clickState: Int64 = isDouble ? 2 : 1
+        postMouse(.leftMouseDown, at: position, clickState: clickState)
+        postMouse(.leftMouseUp, at: position, clickState: clickState)
+
+        if isDouble {
+            lastClickTime = 0
+        } else {
+            lastClickTime = now
+            lastClickPosition = position
+        }
     }
 
     /// Moves the cursor by the given delta (in points).
