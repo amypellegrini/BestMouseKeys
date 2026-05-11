@@ -12,7 +12,9 @@ import CoreGraphics
 /// Numpad Enter toggles the grid overlay; in overlay mode the digits jump
 /// the cursor to the chosen cell (recursively), and Enter or Escape cancels.
 /// Numpad 0 toggles a synthetic drag (press once to grab, again to drop) —
-/// works in both normal and overlay modes.
+/// works in both normal and overlay modes. While a drag is active any key
+/// other than the movement directions or Numpad Enter (grid) drops it, so
+/// the user can't accidentally leave the synthetic button held.
 /// Numpad - performs a right-click at the current cursor position.
 final class KeyboardMonitor {
     private var eventTap: CFMachPort?
@@ -20,6 +22,14 @@ final class KeyboardMonitor {
 
     /// Points to move per key press.
     private static let step: CGFloat = 20
+
+    /// Keys that don't end an active drag: Numpad Enter (grid) and the eight
+    /// movement directions. Anything else dropped on the user mid-drag would
+    /// have to be intentional drop-then-continue behavior, so we drop first.
+    private static let safeKeysWhileDragging: Set<Int64> = [
+        76,                             // Numpad Enter
+        83, 84, 85, 86, 88, 89, 91, 92, // Numpad 1-4, 6-9
+    ]
 
     func start() {
         let eventMask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
@@ -95,6 +105,18 @@ final class KeyboardMonitor {
                 OverlayController.shared.show()
             }
             return nil
+        }
+
+        // While dragging, any non-safe key ends the drag. Numpad click keys
+        // are swallowed (the drop consumed the press); other keys still pass
+        // through so the focused app receives them.
+        if MouseController.isDragging && !safeKeysWhileDragging.contains(keyCode) {
+            DispatchQueue.main.async {
+                MouseController.releaseDragIfNeeded()
+            }
+            return numpadAction(for: keyCode) != nil
+                ? nil
+                : Unmanaged.passRetained(event)
         }
 
         // Only intercept numpad keys.

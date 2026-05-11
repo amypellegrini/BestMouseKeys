@@ -39,6 +39,8 @@ Numpad layout:
 
 Numpad 0 (drag toggle) works inside the grid overlay too, so you can grab, warp via the grid, and drop.
 
+While a drag is active, only the movement keys (1–4, 6–9) and Numpad Enter (grid overlay) keep the drag alive. Any other key — Numpad 5, Numpad -, Escape, or any non-numpad key — ends the drag, so you can't accidentally leave the synthetic mouse button held when you switch tasks. Non-numpad keys still reach the focused app after the drop.
+
 ## Resetting Accessibility permission
 
 If the app stops working after a rebuild or signing identity change, macOS may be holding a stale Accessibility entry. Reset it with:
