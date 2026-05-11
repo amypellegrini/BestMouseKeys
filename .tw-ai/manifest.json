@@ -1,0 +1,10 @@
+{
+  "platforms": [
+    "claude-code"
+  ],
+  "skills": [
+    "commit",
+    "assess-test-pyramid"
+  ],
+  "issueTracker": "github"
+}
