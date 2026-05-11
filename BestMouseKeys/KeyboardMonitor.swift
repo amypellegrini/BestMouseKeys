@@ -13,6 +13,7 @@ import CoreGraphics
 /// the cursor to the chosen cell (recursively), and Enter or Escape cancels.
 /// Numpad 0 toggles a synthetic drag (press once to grab, again to drop) —
 /// works in both normal and overlay modes.
+/// Numpad - performs a right-click at the current cursor position.
 final class KeyboardMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -143,6 +144,8 @@ final class KeyboardMonitor {
             return { MouseController.move(dx: 0, dy: s) }
         case 85: // Numpad 3 — down-right
             return { MouseController.move(dx: s, dy: s) }
+        case 78: // Numpad - — right-click
+            return { MouseController.rightTap() }
         default:
             return nil
         }

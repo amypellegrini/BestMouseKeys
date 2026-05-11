@@ -53,6 +53,13 @@ enum MouseController {
         }
     }
 
+    /// Performs a right-click at the current cursor position.
+    static func rightTap() {
+        let position = currentPosition()
+        postMouse(.rightMouseDown, at: position, button: .right, clickState: 1)
+        postMouse(.rightMouseUp, at: position, button: .right, clickState: 1)
+    }
+
     /// Moves the cursor by the given delta (in points).
     static func move(dx: CGFloat, dy: CGFloat) {
         let current = currentPosition()
@@ -144,13 +151,14 @@ enum MouseController {
     private static func postMouse(
         _ type: CGEventType,
         at point: CGPoint,
+        button: CGMouseButton = .left,
         clickState: Int64? = nil
     ) {
         guard let event = CGEvent(
             mouseEventSource: eventSource,
             mouseType: type,
             mouseCursorPosition: point,
-            mouseButton: .left
+            mouseButton: button
         ) else { return }
         if let clickState {
             event.setIntegerValueField(.mouseEventClickState, value: clickState)
