@@ -41,6 +41,22 @@ Numpad 0 (drag toggle) works inside the grid overlay too, so you can grab, warp 
 
 While a drag is active, only the movement keys (1–4, 6–9) and Numpad Enter (grid overlay) keep the drag alive. Any other key — Numpad 5, Numpad -, Escape, or any non-numpad key — ends the drag, so you can't accidentally leave the synthetic mouse button held when you switch tasks. Non-numpad keys still reach the focused app after the drop.
 
+## Known limitations
+
+**Password and other secure text fields.** While a password field is focused,
+macOS turns on *Secure Event Input* — an anti-keylogger feature that delivers
+keystrokes straight to the focused app and withholds them from every event tap,
+regardless of tap level or permission. BestMouseKeys reads the numpad through an
+event tap, so it is dormant in that state: numpad keys fall through and type
+their digits instead of moving or clicking the cursor.
+
+This affects all event-tap-based utilities, and there is no entitlement that
+opts out. When it happens the menu bar icon dims and the menu shows
+*"Paused — a password field is focused"*. Click into a non-secure field (or
+finish entering the password) and control resumes. Driving the mouse inside a
+secure field would require a virtual HID device driver, which BestMouseKeys
+does not ship.
+
 ## Resetting Accessibility permission
 
 If the app stops working after a rebuild or signing identity change, macOS may be holding a stale Accessibility entry. Reset it with:
