@@ -1,4 +1,5 @@
 import SwiftUI
+import Carbon.HIToolbox
 
 @main
 struct BestMouseKeysApp: App {
@@ -13,8 +14,18 @@ struct BestMouseKeysApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
+    private var secureInputItem: NSMenuItem!
     private var keyboardMonitor: KeyboardMonitor?
     private var permissionPollTimer: Timer?
+
+    /// Polls Secure Event Input state. When a password field is focused macOS
+    /// enables Secure Event Input, which withholds keystrokes from every
+    /// CGEventTap — so BestMouseKeys is dormant there and the user gets no
+    /// numpad-driven mouse control. There's no notification for this; polling
+    /// is the only way to detect it. Used purely to surface the state in the
+    /// menu bar so the app's silence is explained rather than mysterious.
+    private var secureInputPollTimer: Timer?
+    private var isSecureInputActive = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBarItem()
@@ -26,6 +37,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .mouseDragStateChanged,
             object: nil
         )
+
+        secureInputPollTimer = Timer.scheduledTimer(
+            withTimeInterval: 1.0, repeats: true
+        ) { [weak self] _ in
+            self?.refreshSecureInputState()
+        }
 
         // Defer to the next runloop tick: creating a CGEvent tap inside
         // applicationDidFinishLaunching produces a port that silently drops
@@ -45,12 +62,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateMenuBarIcon() {
         guard let button = statusItem.button else { return }
+
         let symbolName = MouseController.isDragging ? "computermouse.fill" : "computermouse"
         button.image = NSImage(
             systemSymbolName: symbolName,
             accessibilityDescription: "Best Mouse Keys"
         )
-        button.contentTintColor = MouseController.isDragging ? .systemRed : nil
+
+        // Drag (red) takes visual priority; a dim icon flags that numpad
+        // control is suspended because a password field has Secure Event
+        // Input active.
+        if MouseController.isDragging {
+            button.contentTintColor = .systemRed
+        } else if isSecureInputActive && keyboardMonitor != nil {
+            button.contentTintColor = .tertiaryLabelColor
+        } else {
+            button.contentTintColor = nil
+        }
+    }
+
+    /// Re-reads Secure Event Input state and refreshes the menu bar if it
+    /// changed. A focused password field flips this on and the app can do
+    /// nothing until focus leaves — see `secureInputPollTimer`.
+    private func refreshSecureInputState() {
+        let active = IsSecureEventInputEnabled()
+        guard active != isSecureInputActive else { return }
+        isSecureInputActive = active
+        updateSecureInputMenuItem()
+        updateMenuBarIcon()
+    }
+
+    private func updateSecureInputMenuItem() {
+        secureInputItem.isHidden = !(isSecureInputActive && keyboardMonitor != nil)
     }
 
     private func startMonitoringWhenPermitted() {
@@ -85,6 +128,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         menu.addItem(NSMenuItem.separator())
 
+        secureInputItem = NSMenuItem(
+            title: "Paused — a password field is focused", action: nil, keyEquivalent: ""
+        )
+        secureInputItem.isEnabled = false
+        secureInputItem.isHidden = true
+        menu.addItem(secureInputItem)
+
         let enabledItem = NSMenuItem(
             title: "Enabled", action: #selector(toggleEnabled(_:)), keyEquivalent: "e"
         )
@@ -113,10 +163,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard keyboardMonitor == nil else { return }
         keyboardMonitor = KeyboardMonitor()
         keyboardMonitor?.start()
+        updateSecureInputMenuItem()
+        updateMenuBarIcon()
     }
 
     private func stopMonitoring() {
         keyboardMonitor?.stop()
         keyboardMonitor = nil
+        updateSecureInputMenuItem()
+        updateMenuBarIcon()
     }
 }
