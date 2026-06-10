@@ -4,7 +4,17 @@
   ],
   "skills": [
     "commit",
-    "assess-test-pyramid"
+    "assess-test-pyramid",
+    "tdd",
+    "open-pr",
+    "address-pr-comments",
+    "check-ci",
+    "pickup-issue",
+    "commit-and-push",
+    "close-issue",
+    "dev",
+    "qa-test",
+    "qa"
   ],
   "issueTracker": "github"
 }
