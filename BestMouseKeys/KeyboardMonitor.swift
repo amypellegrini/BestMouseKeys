@@ -74,10 +74,20 @@ final class KeyboardMonitor {
 
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
 
-        // Numpad 0 — toggles drag (works in both normal and overlay modes).
+        // Numpad 0 — toggles left-button drag (works in both modes).
         if keyCode == 82 {
             DispatchQueue.main.async {
-                MouseController.toggleDrag()
+                MouseController.toggleDrag(button: .left)
+            }
+            return nil
+        }
+
+        // Numpad + — toggles right-button drag (works in both modes). Pressing
+        // either drag key while a drag is active drops it, so they share a
+        // grab/drop pair and can't leave two buttons held.
+        if keyCode == 69 {
+            DispatchQueue.main.async {
+                MouseController.toggleDrag(button: .right)
             }
             return nil
         }

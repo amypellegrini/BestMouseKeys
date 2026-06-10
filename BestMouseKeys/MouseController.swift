@@ -6,7 +6,12 @@ extension Notification.Name {
 }
 
 enum MouseController {
-    private(set) static var isDragging: Bool = false
+    /// The mouse button currently held for a synthetic drag, or `nil` when no
+    /// drag is in progress. Only one button is ever held at a time.
+    private(set) static var draggingButton: CGMouseButton?
+
+    /// Convenience: whether any drag (left or right) is active.
+    static var isDragging: Bool { draggingButton != nil }
 
     /// Shared event source. Using one source for the lifetime of the gesture
     /// helps stricter receivers (Finder) treat down/dragged/up as a single
@@ -67,9 +72,9 @@ enum MouseController {
     }
 
     /// Warps the cursor to an absolute CGEvent (top-left origin) point.
-    /// While a drag is active, posts intermediate `.leftMouseDragged` events
-    /// along the path with small delays so receivers like Finder track the
-    /// gesture rather than drop it on a discontinuous teleport.
+    /// While a drag is active, posts intermediate dragged events (matching the
+    /// held button) along the path with small delays so receivers like Finder
+    /// track the gesture rather than drop it on a discontinuous teleport.
     static func warp(to point: CGPoint) {
         if isDragging {
             let start = currentPosition()
@@ -90,21 +95,26 @@ enum MouseController {
         }
     }
 
-    /// Toggles a synthetic left-button hold. On press: posts `leftMouseDown`
-    /// then a graduated kick (5 small drag events ramping past the system
-    /// drag-distance threshold). On release: posts a zero-delta settle event,
-    /// then `leftMouseUp`.
-    static func toggleDrag() {
+    /// Toggles a synthetic button hold for `button` (default left). On press:
+    /// posts `<button>MouseDown` then a 12 px kick past the system
+    /// drag-distance threshold. On release: posts a zero-delta settle event,
+    /// then `<button>MouseUp`.
+    ///
+    /// Only one button is held at a time. If a drag is already in progress —
+    /// with *either* button — this call drops it, regardless of the `button`
+    /// argument, so the two drag toggles act as a shared grab/drop pair.
+    static func toggleDrag(button: CGMouseButton = .left) {
         let position = currentPosition()
-        let wasDragging = isDragging
 
-        if wasDragging {
+        if let held = draggingButton {
             stopDragHeartbeat()
             postDragged(at: position, deltaX: 0, deltaY: 0)
             usleep(2000)
-            postMouse(.leftMouseUp, at: position, clickState: 1)
+            postMouse(upType(for: held), at: position, button: held, clickState: 1)
+            draggingButton = nil
         } else {
-            postMouse(.leftMouseDown, at: position, clickState: 1)
+            postMouse(downType(for: button), at: position, button: button, clickState: 1)
+            draggingButton = button
             // Single 12 px kick to cross drag-distance thresholds (Finder ~3 px,
             // AppKit ~5 px, Chrome tab tracker ~8-10 px).
             usleep(5000)
@@ -116,8 +126,15 @@ enum MouseController {
             startDragHeartbeat()
         }
 
-        isDragging.toggle()
         NotificationCenter.default.post(name: .mouseDragStateChanged, object: nil)
+    }
+
+    private static func downType(for button: CGMouseButton) -> CGEventType {
+        button == .right ? .rightMouseDown : .leftMouseDown
+    }
+
+    private static func upType(for button: CGMouseButton) -> CGEventType {
+        button == .right ? .rightMouseUp : .leftMouseUp
     }
 
     private static func startDragHeartbeat() {
@@ -141,7 +158,7 @@ enum MouseController {
 
     /// Releases an active drag if one is in progress. No-op otherwise.
     static func releaseDragIfNeeded() {
-        if isDragging { toggleDrag() }
+        if let button = draggingButton { toggleDrag(button: button) }
     }
 
     private static func currentPosition() -> CGPoint {
@@ -167,11 +184,13 @@ enum MouseController {
     }
 
     private static func postDragged(at point: CGPoint, deltaX: CGFloat, deltaY: CGFloat) {
+        let button = draggingButton ?? .left
+        let type: CGEventType = button == .right ? .rightMouseDragged : .leftMouseDragged
         guard let event = CGEvent(
             mouseEventSource: eventSource,
-            mouseType: .leftMouseDragged,
+            mouseType: type,
             mouseCursorPosition: point,
-            mouseButton: .left
+            mouseButton: button
         ) else { return }
         event.setIntegerValueField(.mouseEventClickState, value: 1)
         event.setIntegerValueField(.mouseEventDeltaX, value: Int64(deltaX.rounded()))
