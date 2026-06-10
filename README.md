@@ -23,9 +23,9 @@ Numpad layout:
 
 ```
  7 (↖)   8 (↑)   9 (↗)   -  (right-click)
- 4 (←)   5 (●)   6 (→)
+ 4 (←)   5 (●)   6 (→)   +  (right-drag toggle)
  1 (↙)   2 (↓)   3 (↘)
- 0 (drag toggle)   Enter (grid overlay)
+ 0 (left-drag toggle)   Enter (grid overlay)
 ```
 
 | Key | Action |
@@ -33,13 +33,16 @@ Numpad layout:
 | Numpad 1–4, 6–9 | Move cursor (20 pt per press) |
 | Numpad 5 | Left-click — double-tap within 0.3 s for double-click |
 | Numpad - | Right-click |
-| Numpad 0 | Toggle drag (press to grab, press again to drop) |
+| Numpad 0 | Toggle left-button drag (press to grab, press again to drop) |
+| Numpad + | Toggle right-button drag (press to grab, press again to drop) |
 | Numpad Enter | Show grid overlay — digits 1–9 jump the cursor to a screen cell, recursing on each press |
 | Escape | Dismiss the grid overlay |
 
-Numpad 0 (drag toggle) works inside the grid overlay too, so you can grab, warp via the grid, and drop.
+Both drag toggles work inside the grid overlay too, so you can grab, warp via the grid, and drop. Only one button is ever held at a time: pressing either drag key while a drag is active drops it.
 
 While a drag is active, only the movement keys (1–4, 6–9) and Numpad Enter (grid overlay) keep the drag alive. Any other key — Numpad 5, Numpad -, Escape, or any non-numpad key — ends the drag, so you can't accidentally leave the synthetic mouse button held when you switch tasks. Non-numpad keys still reach the focused app after the drop.
+
+**Right-drag is niche.** Most macOS apps treat a right-button press-and-release as a request for the context menu and ignore drag motion between them. Right-button drag-and-drop is only meaningful in apps that explicitly support it (some 3D/CAD tools, a few file managers and games). In everything else, Numpad + will just open the context menu on drop.
 
 ## Known limitations
 
