@@ -34,13 +34,17 @@ final class KeyboardMonitor {
     func start() {
         let eventMask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
 
+        // Pass an unretained pointer to self so the C callback can re-enable
+        // the tap if macOS disables it (see `.tapDisabledByTimeout` below).
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: eventMask,
             callback: KeyboardMonitor.eventCallback,
-            userInfo: nil
+            userInfo: selfPtr
         ) else {
             print("[BestMouseKeys] Failed to create event tap. Is Accessibility enabled?")
             return
@@ -67,7 +71,20 @@ final class KeyboardMonitor {
 
     // MARK: - Event tap callback
 
-    private static let eventCallback: CGEventTapCallBack = { _, type, event, _ in
+    private static let eventCallback: CGEventTapCallBack = { _, type, event, userInfo in
+        // macOS disables the tap if a callback runs long, or across some
+        // input/sleep-wake transitions. It must be explicitly re-enabled or
+        // the numpad goes silently — and permanently — dead until relaunch.
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let userInfo {
+                let monitor = Unmanaged<KeyboardMonitor>.fromOpaque(userInfo).takeUnretainedValue()
+                if let tap = monitor.eventTap {
+                    CGEvent.tapEnable(tap: tap, enable: true)
+                }
+            }
+            return Unmanaged.passUnretained(event)
+        }
+
         guard type == .keyDown else {
             return Unmanaged.passRetained(event)
         }
