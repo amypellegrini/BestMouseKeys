@@ -60,6 +60,46 @@ finish entering the password) and control resumes. Driving the mouse inside a
 secure field would require a virtual HID device driver, which BestMouseKeys
 does not ship.
 
+A focused password field is the most common cause, but it is not the only one.
+*Any* app can turn Secure Event Input on, and some leave it on longer than you'd
+expect:
+
+- **Terminals with "Secure Keyboard Entry."** Terminal.app and iTerm2 both have a
+  "Secure Keyboard Entry" menu toggle that holds Secure Event Input on the whole
+  time that terminal is the active app. Turn it off in the app's menu.
+- **Apps that leak it.** Some apps (notably 1Password and other Electron-based
+  password managers) occasionally fail to release Secure Event Input after their
+  unlock / quick-access window closes, leaving it stuck on *globally* even when
+  nothing is focused — so BestMouseKeys stays paused with no password field in
+  sight. This is common after wake-from-sleep / unlock. Fully quitting the
+  offending app releases it (only the process that turned Secure Event Input on
+  can turn it off — no other app, BestMouseKeys included, can clear it).
+
+### Auto-recovery
+
+Because a leaked Secure Event Input can only be cleared by restarting the app
+that leaked it, BestMouseKeys watches for the stuck state and recovers on its
+own. When Secure Event Input has been continuously on for ~15s (longer than any
+real password entry) while the numpad is meant to be active, and 1Password is
+running in the background (not the frontmost app — so an actual master-password
+entry is never interrupted), it quits and relaunches 1Password to release the
+input. A 2-minute cooldown prevents it from bouncing the app repeatedly when the
+input is legitimately held elsewhere (e.g. a web password field in a browser).
+
+This is on by default; toggle it from the menu bar via **"Auto-recover stuck
+Secure Input."** The 1Password bundle id is currently the only known leaker the
+watchdog targets (see `SecureInputWatchdog.swift`).
+
+To check whether Secure Event Input is the culprit and which kind, run:
+
+```bash
+swift -e 'import Carbon; print("Secure Event Input:", IsSecureEventInputEnabled())'
+```
+
+If it prints `true` while no password field is focused, an app is holding it.
+If it stays `true` no matter which app is frontmost, an app has leaked it — quit
+your password manager / terminals until it flips to `false`.
+
 ## Resetting Accessibility permission
 
 If the app stops working after a rebuild or signing identity change, macOS may be holding a stale Accessibility entry. Reset it with:

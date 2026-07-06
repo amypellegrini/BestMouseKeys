@@ -27,6 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var secureInputPollTimer: Timer?
     private var isSecureInputActive = false
 
+    /// Recovers from Secure Event Input that some other app has leaked and left
+    /// stuck on — see `SecureInputWatchdog`. Fed by the same poll below.
+    private let secureInputWatchdog = SecureInputWatchdog()
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBarItem()
         AccessibilityManager.shared.requestAccessIfNeeded()
@@ -41,7 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         secureInputPollTimer = Timer.scheduledTimer(
             withTimeInterval: 1.0, repeats: true
         ) { [weak self] _ in
-            self?.refreshSecureInputState()
+            self?.handleSecureInputTick()
         }
 
         // Defer to the next runloop tick: creating a CGEvent tap inside
@@ -81,15 +85,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Re-reads Secure Event Input state and refreshes the menu bar if it
-    /// changed. A focused password field flips this on and the app can do
-    /// nothing until focus leaves — see `secureInputPollTimer`.
-    private func refreshSecureInputState() {
+    /// Re-reads Secure Event Input state once per second: refreshes the menu bar
+    /// when it changes, and feeds the watchdog every tick so it can measure how
+    /// long the input has been stuck. A focused password field flips this on and
+    /// the app can do nothing until focus leaves — see `secureInputPollTimer` —
+    /// but an app that *leaks* it gets recovered by `SecureInputWatchdog`.
+    private func handleSecureInputTick() {
         let active = IsSecureEventInputEnabled()
-        guard active != isSecureInputActive else { return }
-        isSecureInputActive = active
-        updateSecureInputMenuItem()
-        updateMenuBarIcon()
+        if active != isSecureInputActive {
+            isSecureInputActive = active
+            updateSecureInputMenuItem()
+            updateMenuBarIcon()
+        }
+        secureInputWatchdog.tick(seiActive: active, monitoringActive: keyboardMonitor != nil)
     }
 
     private func updateSecureInputMenuItem() {
@@ -141,12 +149,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         enabledItem.state = .on
         menu.addItem(enabledItem)
 
+        let autoRecoverItem = NSMenuItem(
+            title: "Auto-recover stuck Secure Input",
+            action: #selector(toggleAutoRecover(_:)),
+            keyEquivalent: ""
+        )
+        autoRecoverItem.state = secureInputWatchdog.isEnabled ? .on : .off
+        menu.addItem(autoRecoverItem)
+
         menu.addItem(NSMenuItem.separator())
         menu.addItem(
             NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         )
 
         statusItem.menu = menu
+    }
+
+    @objc private func toggleAutoRecover(_ sender: NSMenuItem) {
+        secureInputWatchdog.isEnabled.toggle()
+        sender.state = secureInputWatchdog.isEnabled ? .on : .off
     }
 
     @objc private func toggleEnabled(_ sender: NSMenuItem) {

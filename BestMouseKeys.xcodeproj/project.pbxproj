@@ -11,6 +11,7 @@
 		A52E1217E81BB04EDDE564C7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED4F936FC0C57780D942925 /* ContentView.swift */; };
 		B099B608241B8CD5248E9F95 /* BestMouseKeysApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A56E2337AF02B81872AD044 /* BestMouseKeysApp.swift */; };
 		B6A6425E03ED2123BF728973 /* OverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CFF93850BB33180B513FB6E /* OverlayView.swift */; };
+		B7348492C128F3F032D2F814 /* SecureInputWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9AD3A5A033B607E4F586CAD /* SecureInputWatchdog.swift */; };
 		CB76CA11FB68CF852218E92B /* AccessibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D24A1E119455CACB03476D34 /* AccessibilityManager.swift */; };
 		D73BF5B9954563453AE194F8 /* KeyboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A900D6AD1BC8F9B537203850 /* KeyboardMonitor.swift */; };
 		DC1294C111E7AB5B6FD46844 /* MouseController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92320126447694F9E756E33C /* MouseController.swift */; };
@@ -26,6 +27,7 @@
 		95439213645F404A284CCEC7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9CFF93850BB33180B513FB6E /* OverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayView.swift; sourceTree = "<group>"; };
 		A900D6AD1BC8F9B537203850 /* KeyboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardMonitor.swift; sourceTree = "<group>"; };
+		A9AD3A5A033B607E4F586CAD /* SecureInputWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureInputWatchdog.swift; sourceTree = "<group>"; };
 		B1B9CD125E63913238EDB712 /* OverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayController.swift; sourceTree = "<group>"; };
 		D24A1E119455CACB03476D34 /* AccessibilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityManager.swift; sourceTree = "<group>"; };
 		E6C773EDB192839A505B6761 /* BestMouseKeys.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BestMouseKeys.entitlements; sourceTree = "<group>"; };
@@ -61,6 +63,7 @@
 				92320126447694F9E756E33C /* MouseController.swift */,
 				B1B9CD125E63913238EDB712 /* OverlayController.swift */,
 				9CFF93850BB33180B513FB6E /* OverlayView.swift */,
+				A9AD3A5A033B607E4F586CAD /* SecureInputWatchdog.swift */,
 			);
 			path = BestMouseKeys;
 			sourceTree = "<group>";
@@ -139,6 +142,7 @@
 				DC1294C111E7AB5B6FD46844 /* MouseController.swift in Sources */,
 				65A682032FFA6197B9DE81E7 /* OverlayController.swift in Sources */,
 				B6A6425E03ED2123BF728973 /* OverlayView.swift in Sources */,
+				B7348492C128F3F032D2F814 /* SecureInputWatchdog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
